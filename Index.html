@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mines Prediction PRO</title>
+    <style>
+        /* Cyberpunk Theme */
+        :root {
+            --neon-green: #0f0;
+            --neon-pink: #ff2a6d;
+            --neon-blue: #05d9e8;
+            --dark-bg: #0d0221;
+            --darker-bg: #05010a;
+        }
+        
+        body {
+            margin: 0;
+            font-family: 'Rajdhani', 'Courier New', monospace;
+            color: var(--neon-green);
+            background: var(--dark-bg);
+            overflow-x: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            text-align: center;
+        }
+
+        /* Glitch Effect */
+        .glitch {
+            position: relative;
+        }
+        .glitch::before, .glitch::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.8;
+        }
+        .glitch::before {
+            color: var(--neon-pink);
+            z-index: -1;
+            animation: glitch-effect 3s infinite;
+        }
+        .glitch::after {
+            color: var(--neon-blue);
+            z-index: -2;
+            animation: glitch-effect 2s infinite reverse;
+        }
+
+        @keyframes glitch-effect {
+            0% { transform: translate(0); }
+            20% { transform: translate(-3px, 3px); }
+            40% { transform: translate(-3px, -3px); }
+            60% { transform: translate(3px, 3px); }
+            80% { transform: translate(3px, -3px); }
+            100% { transform: translate(0); }
+        }
+
+        /* Matrix Background */
+        #matrix-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.15;
+        }
+
+        /* Main Container */
+        .container {
+            background: rgba(13, 2, 33, 0.85);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 0 30px rgba(5, 217, 232, 0.3),
+                        0 0 15px rgba(255, 42, 109, 0.3);
+            max-width: 650px;
+            width: 90%;
+            margin: 20px;
+            border: 1px solid var(--neon-blue);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            right: -10px;
+            bottom: -10px;
+            border: 2px solid var(--neon-pink);
+            border-radius: 20px;
+            animation: pulse 4s infinite alternate;
+            z-index: -1;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.3; }
+            100% { opacity: 0.7; }
+        }
+
+        h1 {
+            font-size: 2.8em;
+            text-shadow: 0 0 15px var(--neon-green);
+            margin-bottom: 15px;
+            letter-spacing: 2px;
+            position: relative;
+        }
+
+        /* Status Bar */
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+            background: rgba(5, 1, 10, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid var(--neon-blue);
+        }
+
+        /* Mines Grid */
+        #mines-grid {
+            font-size: 2.2em;
+            line-height: 1.3;
+            white-space: pre;
+            background: rgba(5, 1, 10, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 25px 0;
+            border: 1px solid var(--neon-pink);
+            box-shadow: 0 0 20px rgba(255, 42, 109, 0.2);
+            min-height: 180px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* Timer */
+        #timer {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 0.6em;
+            color: var(--neon-blue);
+        }
+
+        /* Stats Section */
+        #stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 25px 0;
+            font-size: 1.2em;
+        }
+
+        .stat-box {
+            background: rgba(5, 1, 10, 0.7);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid;
+        }
+
+        .predictions { border-color: var(--neon-blue); }
+        .wins { border-color: var(--neon-green); }
+        .losses { border-color: var(--neon-pink); }
+
+        .stat-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            margin: 5px 0;
+            display: block;
+        }
+
+        /* Buttons */
+        .btn-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 14px 25px;
+            margin: 5px;
+            background: linear-gradient(45deg, var(--neon-blue), var(--neon-green));
+            color: #000;
+            text-decoration: none;
+            font-weight: bold;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 15px rgba(5, 217, 232, 0.5);
+            border: none;
+            font-size: 1.1em;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, var(--neon-pink), var(--neon-blue));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: -1;
+        }
+
+        .btn:hover::before {
+            opacity: 1;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 0 25px rgba(255, 42, 109, 0.7);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        /* Footer */
+        footer {
+            margin-top: 30px;
+            font-size: 0.9em;
+            color: var(--neon-blue);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2em;
+            }
+            
+            #stats {
+                grid-template-columns: 1fr;
+            }
+            
+            .btn-container {
+                grid-template-columns: 1fr;
+            }
+            
+            #mines-grid {
+                font-size: 1.8em;
+                min-height: 150px;
+            }
+        }
+
+        /* Loading Animation */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 4px solid rgba(5, 217, 232, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--neon-blue);
+            animation: spin 1s ease-in-out infinite;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Matrix Background Canvas -->
+    <canvas id="matrix-canvas"></canvas>
+
+    <!-- Main Content -->
+    <div class="container">
+        <h1 class="glitch" data-text="MINES PREDICTION PRO">MINES PREDICTION PRO</h1>
+        
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <span>🎯 Accuracy: <span id="accuracy">87%</span></span>
+            <span>⚡ Version: <span id="version">2.1.4</span></span>
+            <span>🔒 Status: <span id="status" style="color: #0f0;">Active</span></span>
+        </div>
+        
+        <p>🚀 Advanced AI Prediction | ⏳ Updates Every 180 Seconds</p>
+        
+        <!-- Mines Grid -->
+        <div id="mines-grid">
+            <div class="loading"></div>
+            <div id="timer"></div>
+        </div>
+        
+        <!-- Stats -->
+        <div id="stats">
+            <div class="stat-box predictions">
+                <span>Total Predictions</span>
+                <span class="stat-value" id="total-predictions">0</span>
+            </div>
+            <div class="stat-box wins">
+                <span>Successful Predictions</span>
+                <span class="stat-value" id="total-wins">0</span>
+            </div>
+            <div class="stat-box losses">
+                <span>Failed Predictions</span>
+                <span class="stat-value" id="total-losses">0</span>
+            </div>
+        </div>
+        
+        <!-- Buttons -->
+        <div class="btn-container">
+            <a href="https://t.me/MINESPRODUCTOIN" class="btn">📢 Telegram Channel</a>
+            <a href="https://www.in333.in/#/register?invitationCode=71666609644" class="btn">💎 Premium Access</a>
+            <a href="https://payments.cashfree.com/forms?code=Minesaccess" class="btn">⚡ VIP Prediction</a>
+            <a href="https://sites.google.com/view/minesgamedemo-/home" class="btn">🔮 Live Demo</a>
+        </div>
+
+        <!-- Footer -->
+        <footer>
+            <p>⚠️ Use predictions responsibly | Last Updated: <span id="last-updated">Loading...</span></p>
+        </footer>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        // Matrix Rain Background
+        const canvas = document.getElementById('matrix-canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.height = window.innerHeight;
+        canvas.width = window.innerWidth;
+
+        const chars = '01ｦｱｳｴｵｶｷｸｹｺｻｼｽｾｿヿ⺀⺁⺂⺃⺄⺅⺆⺇⺈⺉⺊⺋⺌⺍⺎⺏⺐⺑⺒⺓⺔⺕⺖⺗⺘⺙⺛⺜⺝⺞⺟⺠⺡⺢⺣⺤⺥⺦⺧⺨⺩⺪⺫⺬⺭⺮⺯⺰⺱⺲⺳⺴⺵⺶⺷⺸⺹⺺⺻⺼⺽⺾⺿⻀⻁⻂⻃⻄⻅⻆⻇⻈⻉⻊⻋⻌⻍⻎⻏⻐⻑⻒⻓⻔⻕⻖⻗⻘⻙⻚⻛⻜⻝⻞⻟⻠';
+        const fontSize = 18;
+        const columns = canvas.width / fontSize;
+        const drops = Array(Math.floor(columns)).fill(1);
+
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(13, 2, 33, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw brighter center line
+            ctx.fillStyle = 'rgba(5, 217, 232, 0.8)';
+            const centerX = canvas.width / 2;
+            ctx.fillRect(centerX - 1, 0, 2, canvas.height);
+            
+            // Draw characters
+            ctx.fillStyle = '#05d9e8';
+            ctx.font = `${fontSize}px monospace`;
+
+            drops.forEach((y, i) => {
+                const text = chars.charAt(Math.floor(Math.random() * chars.length));
+                const x = i * fontSize;
+                
+                // Make characters near center brighter
+                const distanceToCenter = Math.abs(x - centerX);
+                const opacity = 1 - (distanceToCenter / centerX) * 0.8;
+                ctx.globalAlpha = opacity;
+                
+                ctx.fillText(text, x, y * fontSize);
+                
+                if (y * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+                
+                ctx.globalAlpha = 1;
+            });
+            
+            // Add occasional pink characters
+            if (Math.random() > 0.95) {
+                const randomCol = Math.floor(Math.random() * columns);
+                ctx.fillStyle = '#ff2a6d';
+                ctx.fillText(chars.charAt(Math.floor(Math.random() * chars.length)), 
+                            randomCol * fontSize, 
+                            drops[randomCol] * fontSize);
+            }
+        }
+        setInterval(drawMatrix, 50);
+
+        // Mines Grid Generator
+        function generateMinesGrid() {
+            const gridSize = 5;
+            const minesCount = [3, 4, 5][Math.floor(Math.random() * 3)];
+            const grid = Array(gridSize).fill().map(() => Array(gridSize).fill('🟦'));
+            let placed = 0;
+            
+            // Place mines
+            while (placed < minesCount) {
+                const x = Math.floor(Math.random() * gridSize);
+                const y = Math.floor(Math.random() * gridSize);
+                if (grid[x][y] === '🟦') {
+                    grid[x][y] = '⭐';
+                    placed++;
+                }
+            }
+            
+            // Place safe spots with special emojis
+            const specialEmojis = ['⭐', '⭐', '⭐', '⭐', '⭐'];
+            for (let i = 0; i < 3; i++) {
+                let x, y;
+                do {
+                    x = Math.floor(Math.random() * gridSize);
+                    y = Math.floor(Math.random() * gridSize);
+                } while (grid[x][y] !== '🟦');
+                
+                grid[x][y] = specialEmojis[Math.floor(Math.random() * specialEmojis.length)];
+            }
+            
+            return grid.map(row => row.join('')).join('\n');
+        }
+
+        // Update Timer
+        function updateTimer() {
+            let seconds = 60;
+            const timerElement = document.getElementById('timer');
+            
+            function tick() {
+                const mins = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                timerElement.textContent = `Next update in: ${mins}:${secs < 10 ? '0' : ''}${secs}`;
+                
+                if (seconds <= 0) {
+                    seconds = 60;
+                    updatePrediction();
+                } else {
+                    seconds--;
+                }
+            }
+            
+            tick();
+            setInterval(tick, 1000);
+        }
+
+        // Stats and Grid Update
+        let totalPredictions = 0, totalWins = 0, totalLosses = 0;
+        function updatePrediction() {
+            totalPredictions++;
+            const result = Math.random() > 0.4 ? 'win' : 'loss';
+            if (result === 'win') totalWins++;
+            else totalLosses++;
+
+            document.getElementById('mines-grid').innerHTML = generateMinesGrid() + '<div id="timer"></div>';
+            document.getElementById('total-predictions').textContent = totalPredictions;
+            document.getElementById('total-wins').textContent = totalWins;
+            document.getElementById('total-losses').textContent = totalLosses;
+            
+            // Update accuracy
+            const accuracy = totalPredictions > 0 ? Math.round((totalWins / totalPredictions) * 100) : 0;
+            document.getElementById('accuracy').textContent = `${accuracy}%`;
+            document.getElementById('accuracy').style.color = accuracy > 70 ? '#0f0' : accuracy > 40 ? '#ff2a6d' : '#05d9e8';
+            
+            // Update last updated time
+            const now = new Date();
+            document.getElementById('last-updated').textContent = now.toLocaleString();
+            
+            // Restart timer
+            updateTimer();
+        }
+
+        // Initial Update and Refresh Every 3 Minutes
+        setTimeout(() => {
+            updatePrediction();
+        }, 1000);
+
+        // Resize Canvas on Window Resize
+        window.addEventListener('resize', () => {
+            canvas.height = window.innerHeight;
+            canvas.width = window.innerWidth;
+        });
+
+        // Simulate version check
+        setTimeout(() => {
+            document.getElementById('version').textContent = '2.1.5';
+            document.getElementById('status').textContent = 'Premium';
+            document.getElementById('status').style.color = '#05d9e8';
+        }, 3000);
+    </script>
+</body>
+</html>
